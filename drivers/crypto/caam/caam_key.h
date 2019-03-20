@@ -15,21 +15,21 @@
 
 /* cover types for BLACK_KEY */
 enum key_cover_type {
-  AES_ECB = 0,
-  AES_CCM = 1,
-  UNKNOWN = 2
+	AES_ECB = 0,
+	AES_CCM = 1,
+	UNKNOWN = 2
 };
 
 struct caam_key_options {
-  unsigned int keymod_len;
-  enum key_cover_type cover;
-  unsigned char keymod[MAX_KEYMOD_SIZE + 1];
+	unsigned int keymod_len;
+	enum key_cover_type cover;
+	unsigned char keymod[MAX_KEYMOD_SIZE + 1];
 };
 
 const char *key_color_name[] = { "RED_KEY", "BLACK_KEY" };
 const char *key_cover_name[] = { "AES_ECB", "AES_CCM" };
 
-#undef CAAM_KEY_DEBUG 
+#undef CAAM_KEY_DEBUG
 
 #ifdef CAAM_KEY_DEBUG
 
@@ -52,7 +52,7 @@ static inline void dump_payload(struct caam_key_payload *p)
 	pr_info("caam_key: color %s\n", key_color_name[p->color]);
 }
 
-#else /* CAAM_KEY_DEBUG */
+#else				/* CAAM_KEY_DEBUG */
 
 static inline void dump_options(struct caam_key_options *o)
 {
@@ -62,6 +62,6 @@ static inline void dump_payload(struct caam_key_payload *p)
 {
 }
 
-#endif /* CAAM_KEY_DEBUG */
+#endif				/* CAAM_KEY_DEBUG */
 
-#endif /* __CAAM_KEY_H */
+#endif				/* __CAAM_KEY_H */

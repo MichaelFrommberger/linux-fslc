@@ -28,7 +28,7 @@
 enum {
 	Opt_err = -1,
 	Opt_new, Opt_load,
-  Opt_color, Opt_keymod, Opt_cover
+	Opt_color, Opt_keymod, Opt_cover
 };
 
 static const match_table_t key_tokens = {
@@ -54,54 +54,55 @@ static int getoptions(char *c, struct caam_key_payload *pay,
 	char *p = c;
 	int token;
 	int res;
-  enum key_color_type color = RED_KEY;
-  unsigned int keymod_len;
-  enum key_cover_type cover = AES_ECB;
+	enum key_color_type color = RED_KEY;
+	unsigned int keymod_len;
+	enum key_cover_type cover = AES_ECB;
 
-		
-  while ((p = strsep(&c, " \t"))) {
+	while ((p = strsep(&c, " \t"))) {
 		if (*p == '\0' || *p == ' ' || *p == '\t')
 			continue;
 		token = match_token(p, key_tokens, args);
-		
-    switch (token) {
+
+		switch (token) {
 		case Opt_color:
-      for (color = RED_KEY; color < UNKNOWN_KEY; color++) {
-        if (0 == strcmp(args[0].from, key_color_name[color]))
-          break;
-      }
-      if (UNKNOWN_KEY == color)
-        return -EINVAL;
-      pay->color = color;
+			for (color = RED_KEY; color < UNKNOWN_KEY; color++) {
+				if (0 ==
+				    strcmp(args[0].from, key_color_name[color]))
+					break;
+			}
+			if (UNKNOWN_KEY == color)
+				return -EINVAL;
+			pay->color = color;
 			break;
 
-    case Opt_keymod:
-      keymod_len = strlen(args[0].from) / 2;
-      if (MIN_KEYMOD_SIZE > keymod_len || MAX_KEYMOD_SIZE < keymod_len)
-        return -EINVAL;
-      res = hex2bin(opt->keymod, args[0].from, keymod_len);
+		case Opt_keymod:
+			keymod_len = strlen(args[0].from) / 2;
+			if (MIN_KEYMOD_SIZE > keymod_len
+			    || MAX_KEYMOD_SIZE < keymod_len)
+				return -EINVAL;
+			res = hex2bin(opt->keymod, args[0].from, keymod_len);
 			if (res < 0)
 				return -EINVAL;
-      opt->keymod_len = keymod_len;
-      break;
-      
-		case Opt_cover:
-      for (cover = AES_ECB; cover < UNKNOWN; cover++) {
-        if (0 == strcmp(args[0].from, key_cover_name[cover]))
-          break;
-      }
-      if (UNKNOWN == cover)
-        return -EINVAL;
-      opt->cover = cover;
+			opt->keymod_len = keymod_len;
 			break;
 
- 		
-    default:
+		case Opt_cover:
+			for (cover = AES_ECB; cover < UNKNOWN; cover++) {
+				if (0 ==
+				    strcmp(args[0].from, key_cover_name[cover]))
+					break;
+			}
+			if (UNKNOWN == cover)
+				return -EINVAL;
+			opt->cover = cover;
+			break;
+
+		default:
 			return -EINVAL;
-    }
-  }
-  
-  return 0;
+		}
+	}
+
+	return 0;
 }
 
 /*
@@ -118,7 +119,7 @@ static int datablob_parse(char *datablob, struct caam_key_payload *p,
 	int ret = -EINVAL;
 	int key_cmd;
 	char *c;
-	
+
 	/* main command */
 	c = strsep(&datablob, " \t");
 	if (!c)
@@ -131,7 +132,8 @@ static int datablob_parse(char *datablob, struct caam_key_payload *p,
 		if (!c)
 			return -EINVAL;
 		ret = kstrtol(c, 10, &keylen);
-		if (ret < 0 || keylen < MIN_RAWKEY_SIZE || keylen > MAX_RAWKEY_SIZE)
+		if (ret < 0 || keylen < MIN_RAWKEY_SIZE
+		    || keylen > MAX_RAWKEY_SIZE)
 			return -EINVAL;
 		p->rawkey_len = keylen;
 		ret = getoptions(datablob, p, o);
@@ -158,37 +160,39 @@ static int datablob_parse(char *datablob, struct caam_key_payload *p,
 	case Opt_err:
 		return -EINVAL;
 		break;
-  }
-  
-  return ret;
+	}
+
+	return ret;
 }
 
 static struct caam_key_options *caam_key_options_alloc(void)
 {
-  struct caam_key_options *options = NULL;
-  
+	struct caam_key_options *options = NULL;
+
 	options = kzalloc(sizeof(*options), GFP_KERNEL);
 
-  if (options) {
-    const unsigned int max_keymod_size = MAX_KEYMOD_SIZE;
-    options->keymod_len = min(sizeof (def_keymod) / sizeof (def_keymod[0]), max_keymod_size);
-    memcpy(options->keymod, def_keymod, options->keymod_len); 
-  }
-  
-  return options;
+	if (options) {
+		const unsigned int max_keymod_size = MAX_KEYMOD_SIZE;
+		options->keymod_len =
+		    min(sizeof(def_keymod) / sizeof(def_keymod[0]),
+			max_keymod_size);
+		memcpy(options->keymod, def_keymod, options->keymod_len);
+	}
+
+	return options;
 }
 
 static struct caam_key_payload *caam_key_payload_alloc(struct key *key)
 {
-  struct caam_key_payload *payload = NULL;
+	struct caam_key_payload *payload = NULL;
 
 	const int ret = key_payload_reserve(key, sizeof(*payload));
 	if (ret < 0)
 		return NULL;
-	
-  payload = kzalloc(sizeof(*payload), GFP_KERNEL);
 
-  return payload;
+	payload = kzalloc(sizeof(*payload), GFP_KERNEL);
+
+	return payload;
 }
 
 /*
@@ -196,17 +200,19 @@ static struct caam_key_payload *caam_key_payload_alloc(struct key *key)
  */
 static struct device_node *get_sm_dev_node(void)
 {
-  /* get device node */
-  struct device_node *dev_node = of_find_compatible_node(NULL, NULL, "fsl,sec-v4.0");
+	/* get device node */
+	struct device_node *dev_node =
+	    of_find_compatible_node(NULL, NULL, "fsl,sec-v4.0");
 	if (!dev_node) {
 		dev_node = of_find_compatible_node(NULL, NULL, "fsl,sec4.0");
 		if (!dev_node) {
-      pr_info("caam_key: no secure memory device node found\n");
+			pr_info
+			    ("caam_key: no secure memory device node found\n");
 			return NULL;
-    }
+		}
 	}
 
-  return dev_node;
+	return dev_node;
 }
 
 /*
@@ -214,57 +220,58 @@ static struct device_node *get_sm_dev_node(void)
  *
  * retuns 0, device and allocated slot on success else error
  */
-static int allocate_slot(u32 unit, u32 slot_size, struct device **dev, u32 *slot)
+static int allocate_slot(u32 unit, u32 slot_size, struct device **dev,
+			 u32 * slot)
 {
-  int ret = 0;
-  u32 units;
+	int ret = 0;
+	u32 units;
 	struct device_node *dev_node;
-  struct platform_device *pdev;
+	struct platform_device *pdev;
 	struct device *ctrldev;
 	struct caam_drv_private *ctrlpriv;
 
-  dev_node = get_sm_dev_node();
-  if (NULL == dev_node)
-  {
-    return -ENODEV;
-  }
- 	
-  pdev = of_find_device_by_node(dev_node);
-	if (!pdev) {
-    pr_info("caam_key: no secure memory device found\n");
+	dev_node = get_sm_dev_node();
+	if (NULL == dev_node) {
 		return -ENODEV;
-  }
-  
-  ctrldev = &pdev->dev;
+	}
+
+	pdev = of_find_device_by_node(dev_node);
+	if (!pdev) {
+		pr_info("caam_key: no secure memory device found\n");
+		return -ENODEV;
+	}
+
+	ctrldev = &pdev->dev;
 	ctrlpriv = dev_get_drvdata(ctrldev);
 	*dev = ctrlpriv->smdev;
 
-  /* check what keystores are available */
-  units = sm_detect_keystore_units(*dev);
-  if (!units)
-    pr_info("caam_key: no keystore units found\n");
+	/* check what keystores are available */
+	units = sm_detect_keystore_units(*dev);
+	if (!units)
+		pr_info("caam_key: no keystore units found\n");
 
-  /* check if configured unit is available */
-  if (unit >= units) {
-    pr_info("caam_key: keystore unit (%d) is not available\n", unit);
-    return -ENODEV;
-  }
-  
-  /* initialize keystore */
+	/* check if configured unit is available */
+	if (unit >= units) {
+		pr_info("caam_key: keystore unit (%d) is not available\n",
+			unit);
+		return -ENODEV;
+	}
+
+	/* initialize keystore */
 	ret = sm_establish_keystore(*dev, unit);
-  if (ret) {
-    pr_info("caam_key: failed to initialize keystore\n");
-    return ret;
-  }
+	if (ret) {
+		pr_info("caam_key: failed to initialize keystore\n");
+		return ret;
+	}
 
-  /* allocate slot for key */
-  ret = sm_keystore_slot_alloc(*dev, unit, slot_size, slot);
-  if (ret) {
-    pr_info("caam_key: failed to allocate slot for key\n");
-    return ret;
-  }
-	
-  return ret;
+	/* allocate slot for key */
+	ret = sm_keystore_slot_alloc(*dev, unit, slot_size, slot);
+	if (ret) {
+		pr_info("caam_key: failed to allocate slot for key\n");
+		return ret;
+	}
+
+	return ret;
 }
 
 /*
@@ -274,104 +281,128 @@ static int allocate_slot(u32 unit, u32 slot_size, struct device **dev, u32 *slot
  */
 static int deallocate_slot(struct device *dev, u32 unit, u32 slot)
 {
-  int ret = sm_keystore_slot_dealloc(dev, unit, slot);
+	int ret = sm_keystore_slot_dealloc(dev, unit, slot);
 
 	if (0 != ret) {
-    pr_info("caam_key: failed to deallocate slot for key in slot (%d)\n", slot);
-  }
-  
-  return ret;
-}
+		pr_info
+		    ("caam_key: failed to deallocate slot for key in slot (%d)\n",
+		     slot);
+	}
 
+	return ret;
+}
 
 /*
  * encrypt the symmetric key with CAAM
  */
-static int key_encrypt(struct caam_key_payload *p,
-		    struct caam_key_options *o)
+static int key_encrypt(struct caam_key_payload *p, struct caam_key_options *o)
 {
-  int ret = -EINVAL;
+	int ret = -EINVAL;
 	struct device *ksdev;
-  u32 keyslot;
-  /* pad to next larger AES blocksize for blackening of keys to have enough space */
-  u32 keyslot_size = (p->color == RED_KEY ? p->rawkey_len : AES_BLOCK_PAD(p->rawkey_len));
+	u32 keyslot;
+	/* pad to next larger AES blocksize for blackening of keys to have enough space */
+	u32 keyslot_size =
+	    (p->color ==
+	     RED_KEY ? p->rawkey_len : AES_BLOCK_PAD(p->rawkey_len));
 
-  /* allocate slot for key */
-  ret = allocate_slot(CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot_size, &ksdev, &keyslot);
-  if (ret) {
-    return ret;
-  }
+	/* allocate slot for key */
+	ret =
+	    allocate_slot(CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+			  keyslot_size, &ksdev, &keyslot);
+	if (ret) {
+		return ret;
+	}
 
-  /* load key to allocated slot */
-  ret = sm_keystore_slot_load(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot, p->rawkey, p->rawkey_len);
-  if (ret) {
-    pr_info("caam_key: failed to load key to slot (%d)\n", keyslot);
-    goto cleanup;
-  }
+	/* load key to allocated slot */
+	ret =
+	    sm_keystore_slot_load(ksdev,
+				  CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+				  keyslot, p->rawkey, p->rawkey_len);
+	if (ret) {
+		pr_info("caam_key: failed to load key to slot (%d)\n", keyslot);
+		goto cleanup;
+	}
 
-  if (BLACK_KEY == p->color) {
-    /* blacken key */
-    ret = sm_keystore_cover_key(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot, p->rawkey_len, o->cover);
-    if (ret) {
-      pr_info("caam_key: failed to blacken key\n");
-      goto cleanup;
-    }
-  }
+	if (BLACK_KEY == p->color) {
+		/* blacken key */
+		ret =
+		    sm_keystore_cover_key(ksdev,
+					  CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+					  keyslot, p->rawkey_len, o->cover);
+		if (ret) {
+			pr_info("caam_key: failed to blacken key\n");
+			goto cleanup;
+		}
+	}
 
-  /* encrypt key to blob */
-	ret = sm_keystore_slot_export(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot, p->color,
-				    o->cover, p->blob, p->rawkey_len, o->keymod);
-  if (ret) {
-    pr_info("caam_key: failed to export/encrypt key to blob\n");
-    goto cleanup;
-  }
+	/* encrypt key to blob */
+	ret =
+	    sm_keystore_slot_export(ksdev,
+				    CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+				    keyslot, p->color, o->cover, p->blob,
+				    p->rawkey_len, o->keymod);
+	if (ret) {
+		pr_info("caam_key: failed to export/encrypt key to blob\n");
+		goto cleanup;
+	}
 
-  p->blob_len = p->rawkey_len + BLOB_OVERHEAD;
+	p->blob_len = p->rawkey_len + BLOB_OVERHEAD;
 
-cleanup:
-	deallocate_slot(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot);
+ cleanup:
+	deallocate_slot(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+			keyslot);
 
-  return ret;
+	return ret;
 }
 
 /*
  * decrypt the symmetric key with CAAM
  */
-static int key_decrypt(struct caam_key_payload *p,
-		    struct caam_key_options *o)
-{ 
-  int ret = -EINVAL;
+static int key_decrypt(struct caam_key_payload *p, struct caam_key_options *o)
+{
+	int ret = -EINVAL;
 	struct device *ksdev;
-  u32 keyslot;
-  u32 keyslot_size = p->blob_len - BLOB_OVERHEAD;
+	u32 keyslot;
+	u32 keyslot_size = p->blob_len - BLOB_OVERHEAD;
 
-  /* allocate slot for key */
-  ret = allocate_slot(CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot_size, &ksdev, &keyslot);
-  if (ret) {
-    return ret;
-  }
+	/* allocate slot for key */
+	ret =
+	    allocate_slot(CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+			  keyslot_size, &ksdev, &keyslot);
+	if (ret) {
+		return ret;
+	}
 
-  /* decrypt key to slot */
-	ret = sm_keystore_slot_import(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot, p->color,
-				    o->cover, p->blob, keyslot_size, o->keymod);
-  if (ret) {
-    pr_info("caam_key: failed to import/decrypt key to slot (%d)\n", keyslot);
-    goto cleanup;
-  }
+	/* decrypt key to slot */
+	ret =
+	    sm_keystore_slot_import(ksdev,
+				    CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+				    keyslot, p->color, o->cover, p->blob,
+				    keyslot_size, o->keymod);
+	if (ret) {
+		pr_info("caam_key: failed to import/decrypt key to slot (%d)\n",
+			keyslot);
+		goto cleanup;
+	}
 
-  /* read key from slot */
-  ret = sm_keystore_slot_read(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot, keyslot_size, p->rawkey);
-  if (ret) {
-    pr_info("caam_key: failed to read key from slot (%d)\n", keyslot);
-    goto cleanup;
-  }
+	/* read key from slot */
+	ret =
+	    sm_keystore_slot_read(ksdev,
+				  CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+				  keyslot, keyslot_size, p->rawkey);
+	if (ret) {
+		pr_info("caam_key: failed to read key from slot (%d)\n",
+			keyslot);
+		goto cleanup;
+	}
 
-  p->rawkey_len = keyslot_size;
+	p->rawkey_len = keyslot_size;
 
-cleanup:
-	deallocate_slot(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT, keyslot);
+ cleanup:
+	deallocate_slot(ksdev, CONFIG_CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT,
+			keyslot);
 
-  return ret;
+	return ret;
 }
 
 /*
@@ -384,7 +415,7 @@ cleanup:
  * On success, return 0. Otherwise return errno.
  */
 static int caam_key_instantiate(struct key *key,
-			       struct key_preparsed_payload *prep)
+				struct key_preparsed_payload *prep)
 {
 	struct caam_key_payload *payload = NULL;
 	struct caam_key_options *options = NULL;
@@ -396,13 +427,13 @@ static int caam_key_instantiate(struct key *key,
 	if (datalen <= 0 || datalen > 32767 || !prep->data)
 		return -EINVAL;
 
-  datablob = kmalloc(datalen + 1, GFP_KERNEL);
+	datablob = kmalloc(datalen + 1, GFP_KERNEL);
 	if (!datablob)
 		return -ENOMEM;
-  memcpy(datablob, prep->data, datalen);
+	memcpy(datablob, prep->data, datalen);
 	datablob[datalen] = '\0';
 
-  options = caam_key_options_alloc();
+	options = caam_key_options_alloc();
 	if (!options) {
 		ret = -ENOMEM;
 		goto out;
@@ -414,7 +445,7 @@ static int caam_key_instantiate(struct key *key,
 		goto out;
 	}
 
-  key_cmd = datablob_parse(datablob, payload, options);
+	key_cmd = datablob_parse(datablob, payload, options);
 	if (key_cmd < 0) {
 		ret = key_cmd;
 		goto out;
@@ -423,7 +454,7 @@ static int caam_key_instantiate(struct key *key,
 	dump_payload(payload);
 	dump_options(options);
 
-  switch (key_cmd) {
+	switch (key_cmd) {
 	case Opt_load:
 		ret = key_decrypt(payload, options);
 		if (ret < 0)
@@ -440,10 +471,10 @@ static int caam_key_instantiate(struct key *key,
 		goto out;
 	}
 
-  dump_payload(payload);
-  dump_options(options);
+	dump_payload(payload);
+	dump_options(options);
 
-out:
+ out:
 	kfree(datablob);
 	kfree(options);
 	if (!ret)
@@ -457,8 +488,8 @@ out:
  * caam_key_read - copy the encrypted blob data to userspace in hex.
  * On success, return to userspace the encrypted key datablob size.
  */
-static long caam_key_read(const struct key *key, char __user *buffer,
-			 size_t buflen)
+static long caam_key_read(const struct key *key, char __user * buffer,
+			  size_t buflen)
 {
 	struct caam_key_payload *p;
 	char *ascii_buf;
@@ -508,17 +539,15 @@ struct key_type key_type_caam = {
 
 EXPORT_SYMBOL_GPL(key_type_caam);
 
-
 static int __init init_caam_key(void)
 {
 	struct device_node *dev_node;
 
-  dev_node = get_sm_dev_node();
-  if (NULL == dev_node)
-  {
-    pr_info("caam_key: no secure memory device node found\n");
-    return -ENODEV;
-  }
+	dev_node = get_sm_dev_node();
+	if (NULL == dev_node) {
+		pr_info("caam_key: no secure memory device node found\n");
+		return -ENODEV;
+	}
 	of_node_get(dev_node);
 
 	return register_key_type(&key_type_caam);
@@ -528,11 +557,10 @@ static void __exit cleanup_caam_key(void)
 {
 	struct device_node *dev_node;
 
-  dev_node = get_sm_dev_node();
-  if (NULL != dev_node)
-  {
-    of_node_put(dev_node);
-  }
+	dev_node = get_sm_dev_node();
+	if (NULL != dev_node) {
+		of_node_put(dev_node);
+	}
 
 	unregister_key_type(&key_type_caam);
 }

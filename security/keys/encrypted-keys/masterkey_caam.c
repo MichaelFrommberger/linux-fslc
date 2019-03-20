@@ -28,7 +28,7 @@
  * data, caam key type data is not visible decrypted from userspace.
  */
 struct key *request_caam_key(const char *caam_desc,
-				const u8 **master_key, size_t *master_keylen)
+			     const u8 ** master_key, size_t * master_keylen)
 {
 	struct caam_key_payload *cpayload;
 	struct key *ckey;

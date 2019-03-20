@@ -53,7 +53,7 @@ Load a CAAM master key from the saved blob:
   b67ff12e34802968f275f2f859149963261f7915a75fe598286c44b4d9b1bbac6978d1f5c3
   94
 
-Use the a CAAM master key to encrypt a user key "test" and save it:
+Use the CAAM master key to encrypt a user key "test" and save it:
 
   $ keyctl add encrypted test "new caam:masterkey 32" @u
   72517406

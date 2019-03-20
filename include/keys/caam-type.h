@@ -18,12 +18,12 @@
 
 #define MAX_BLOB_SIZE			(1 << CONFIG_CRYPTO_DEV_FSL_CAAM_SM_SLOTSIZE)
 #define MAX_RAWKEY_SIZE		(MAX_BLOB_SIZE - BLOB_OVERHEAD)
-#define MIN_RAWKEY_SIZE		1 
+#define MIN_RAWKEY_SIZE		1
 
 enum key_color_type {
-  RED_KEY = 0,
-  BLACK_KEY = 1,
-  UNKNOWN_KEY = 2
+	RED_KEY = 0,
+	BLACK_KEY = 1,
+	UNKNOWN_KEY = 2
 };
 
 struct caam_key_payload {
@@ -37,4 +37,4 @@ struct caam_key_payload {
 
 extern struct key_type key_type_caam;
 
-#endif /* _KEYS_CAAM_TYPE_H */
+#endif				/* _KEYS_CAAM_TYPE_H */
