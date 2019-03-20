@@ -33,8 +33,8 @@ static void derive_crypt_complete(struct crypto_async_request *req, int rc)
  * Return: Zero on success; non-zero otherwise.
  */
 static int derive_key_aes(u8 deriving_key[FS_AES_128_ECB_KEY_SIZE],
-				u8 source_key[FS_AES_256_XTS_KEY_SIZE],
-				u8 derived_key[FS_AES_256_XTS_KEY_SIZE])
+			  u8 source_key[FS_AES_256_XTS_KEY_SIZE],
+			  u8 derived_key[FS_AES_256_XTS_KEY_SIZE])
 {
 	int res = 0;
 	struct skcipher_request *req = NULL;
@@ -54,17 +54,18 @@ static int derive_key_aes(u8 deriving_key[FS_AES_128_ECB_KEY_SIZE],
 		goto out;
 	}
 	skcipher_request_set_callback(req,
-			CRYPTO_TFM_REQ_MAY_BACKLOG | CRYPTO_TFM_REQ_MAY_SLEEP,
-			derive_crypt_complete, &ecr);
-	res = crypto_skcipher_setkey(tfm, deriving_key,
-					FS_AES_128_ECB_KEY_SIZE);
+				      CRYPTO_TFM_REQ_MAY_BACKLOG |
+				      CRYPTO_TFM_REQ_MAY_SLEEP,
+				      derive_crypt_complete, &ecr);
+	res =
+	    crypto_skcipher_setkey(tfm, deriving_key, FS_AES_128_ECB_KEY_SIZE);
 	if (res < 0)
 		goto out;
 
 	sg_init_one(&src_sg, source_key, FS_AES_256_XTS_KEY_SIZE);
 	sg_init_one(&dst_sg, derived_key, FS_AES_256_XTS_KEY_SIZE);
 	skcipher_request_set_crypt(req, &src_sg, &dst_sg,
-					FS_AES_256_XTS_KEY_SIZE, NULL);
+				   FS_AES_256_XTS_KEY_SIZE, NULL);
 	res = crypto_skcipher_encrypt(req);
 	if (res == -EINPROGRESS || res == -EBUSY) {
 		wait_for_completion(&ecr.completion);
@@ -77,8 +78,8 @@ out:
 }
 
 static int validate_user_key(struct fscrypt_info *crypt_info,
-			struct fscrypt_context *ctx, u8 *raw_key,
-			u8 *prefix, int prefix_size)
+			     struct fscrypt_context *ctx, u8 * raw_key,
+			     u8 * prefix, int prefix_size)
 {
 	u8 *full_key_descriptor;
 	struct key *keyring_key;
@@ -94,64 +95,65 @@ static int validate_user_key(struct fscrypt_info *crypt_info,
 
 	memcpy(full_key_descriptor, prefix, prefix_size);
 	sprintf(full_key_descriptor + prefix_size,
-			"%*phN", FS_KEY_DESCRIPTOR_SIZE,
-			ctx->master_key_descriptor);
+		"%*phN", FS_KEY_DESCRIPTOR_SIZE, ctx->master_key_descriptor);
 	full_key_descriptor[full_key_len - 1] = '\0';
 	keyring_key = request_key(&key_type_logon, full_key_descriptor, NULL);
-  if (IS_ERR(keyring_key)) {
-    keyring_key = request_key(&key_type_encrypted, full_key_descriptor, NULL);
-    kfree(full_key_descriptor);
-    if (IS_ERR(keyring_key)) {
-      return  PTR_ERR(keyring_key);
-    }
-    down_read(&keyring_key->sem);
-    
-    if (keyring_key->type != &key_type_encrypted) {
-      printk_once(KERN_WARNING
-          "%s: key type must be encrypted\n", __func__);
-      res = -ENOKEY;
-      goto out;
-    }
-    ekp = encrypted_key_payload(keyring_key);
-    if (!ekp) {
-      /* key was revoked before we acquired its semaphore */
-      res = -EKEYREVOKED;
-      goto out;
-    }
-    if (ekp->payload_datalen != sizeof(struct fscrypt_key)) {
-      res = -EINVAL;
-      goto out;
-    }
-    master_key = (struct fscrypt_key *)ekp->payload_data;
-  } else {
-    kfree(full_key_descriptor);
-    down_read(&keyring_key->sem);
-    
-    if (keyring_key->type != &key_type_logon) {
-      printk_once(KERN_WARNING
-          "%s: key type must be logon\n", __func__);
-      res = -ENOKEY;
-      goto out;
-    }
-    ukp = user_key_payload(keyring_key);
-    if (!ukp) {
-      /* key was revoked before we acquired its semaphore */
-      res = -EKEYREVOKED;
-      goto out;
-    }
-    if (ukp->datalen != sizeof(struct fscrypt_key)) {
-      res = -EINVAL;
-      goto out;
-    }
-    master_key = (struct fscrypt_key *)ukp->data;
-  }
+	if (IS_ERR(keyring_key)) {
+		keyring_key =
+		    request_key(&key_type_encrypted, full_key_descriptor, NULL);
+		kfree(full_key_descriptor);
+		if (IS_ERR(keyring_key)) {
+			return PTR_ERR(keyring_key);
+		}
+		down_read(&keyring_key->sem);
+
+		if (keyring_key->type != &key_type_encrypted) {
+			printk_once(KERN_WARNING
+				    "%s: key type must be encrypted\n",
+				    __func__);
+			res = -ENOKEY;
+			goto out;
+		}
+		ekp = encrypted_key_payload(keyring_key);
+		if (!ekp) {
+			/* key was revoked before we acquired its semaphore */
+			res = -EKEYREVOKED;
+			goto out;
+		}
+		if (ekp->payload_datalen != sizeof(struct fscrypt_key)) {
+			res = -EINVAL;
+			goto out;
+		}
+		master_key = (struct fscrypt_key *)ekp->payload_data;
+	} else {
+		kfree(full_key_descriptor);
+		down_read(&keyring_key->sem);
+
+		if (keyring_key->type != &key_type_logon) {
+			printk_once(KERN_WARNING
+				    "%s: key type must be logon\n", __func__);
+			res = -ENOKEY;
+			goto out;
+		}
+		ukp = user_key_payload(keyring_key);
+		if (!ukp) {
+			/* key was revoked before we acquired its semaphore */
+			res = -EKEYREVOKED;
+			goto out;
+		}
+		if (ukp->datalen != sizeof(struct fscrypt_key)) {
+			res = -EINVAL;
+			goto out;
+		}
+		master_key = (struct fscrypt_key *)ukp->data;
+	}
 
 	BUILD_BUG_ON(FS_AES_128_ECB_KEY_SIZE != FS_KEY_DERIVATION_NONCE_SIZE);
 
 	if (master_key->size != FS_AES_256_XTS_KEY_SIZE) {
 		printk_once(KERN_WARNING
-				"%s: key size incorrect: %d\n",
-				__func__, master_key->size);
+			    "%s: key size incorrect: %d\n",
+			    __func__, master_key->size);
 		res = -ENOKEY;
 		goto out;
 	}
@@ -250,7 +252,7 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	crypt_info->ci_filename_mode = ctx.filenames_encryption_mode;
 	crypt_info->ci_ctfm = NULL;
 	memcpy(crypt_info->ci_master_key, ctx.master_key_descriptor,
-				sizeof(crypt_info->ci_master_key));
+	       sizeof(crypt_info->ci_master_key));
 
 	res = determine_cipher_type(crypt_info, inode, &cipher_str, &keysize);
 	if (res)
@@ -271,14 +273,14 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	}
 
 	res = validate_user_key(crypt_info, &ctx, raw_key,
-			FS_KEY_DESC_PREFIX, FS_KEY_DESC_PREFIX_SIZE);
+				FS_KEY_DESC_PREFIX, FS_KEY_DESC_PREFIX_SIZE);
 	if (res && inode->i_sb->s_cop->key_prefix) {
 		u8 *prefix = NULL;
 		int prefix_size, res2;
 
 		prefix_size = inode->i_sb->s_cop->key_prefix(inode, &prefix);
 		res2 = validate_user_key(crypt_info, &ctx, raw_key,
-							prefix, prefix_size);
+					 prefix, prefix_size);
 		if (res2) {
 			if (res2 == -ENOKEY)
 				res = -ENOKEY;
@@ -293,7 +295,7 @@ got_key:
 		res = ctfm ? PTR_ERR(ctfm) : -ENOMEM;
 		printk(KERN_DEBUG
 		       "%s: error %d (inode %u) allocating crypto tfm\n",
-		       __func__, res, (unsigned) inode->i_ino);
+		       __func__, res, (unsigned)inode->i_ino);
 		goto out;
 	}
 	crypt_info->ci_ctfm = ctfm;
@@ -312,6 +314,7 @@ out:
 	kzfree(raw_key);
 	return res;
 }
+
 EXPORT_SYMBOL(fscrypt_get_encryption_info);
 
 void fscrypt_put_encryption_info(struct inode *inode, struct fscrypt_info *ci)
@@ -329,4 +332,5 @@ void fscrypt_put_encryption_info(struct inode *inode, struct fscrypt_info *ci)
 
 	put_crypt_info(ci);
 }
+
 EXPORT_SYMBOL(fscrypt_put_encryption_info);

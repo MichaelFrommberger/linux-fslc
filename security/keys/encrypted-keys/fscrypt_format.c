@@ -18,6 +18,7 @@ u8 *fscrypt_get_enc_key(struct fscrypt_key *enc_key)
 {
 	return enc_key->raw;
 }
+
 EXPORT_SYMBOL(fscrypt_get_enc_key);
 
 /*
@@ -27,15 +28,16 @@ EXPORT_SYMBOL(fscrypt_get_enc_key);
  */
 int fscrypt_fill_enc_key(struct fscrypt_key *enc_key)
 {
-  /* 
-   * fill in mode: value from e4crypt
-   * (ignored in the kernel at the moment) 
-   */
-  enc_key->mode = FS_ENCRYPTION_MODE_AES_256_XTS;
-  enc_key->size = FS_MAX_KEY_SIZE;
+	/* 
+	 * fill in mode: value from e4crypt
+	 * (ignored in the kernel at the moment) 
+	 */
+	enc_key->mode = FS_ENCRYPTION_MODE_AES_256_XTS;
+	enc_key->size = FS_MAX_KEY_SIZE;
 
-  return 0;
+	return 0;
 }
+
 EXPORT_SYMBOL(fscrypt_fill_enc_key);
 
 MODULE_LICENSE("GPL");

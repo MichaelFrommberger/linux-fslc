@@ -19,4 +19,4 @@
 u8 *fscrypt_get_enc_key(struct fscrypt_key *enc_key);
 int fscrypt_fill_enc_key(struct fscrypt_key *enc_key);
 
-#endif /* __KEYS_FSCRYPT_H */
+#endif				/* __KEYS_FSCRYPT_H */

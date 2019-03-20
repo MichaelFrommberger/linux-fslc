@@ -27,7 +27,7 @@ struct encrypted_key_payload {
 	u8 *encrypted_data;	/* datablob: encrypted data */
 	unsigned short datablob_len;	/* length of datablob */
 	unsigned short decrypted_datalen;	/* decrypted data length */
-	unsigned short payload_datalen;		/* payload data length */
+	unsigned short payload_datalen;	/* payload data length */
 	unsigned short encrypted_key_format;	/* encrypted key format */
 	u8 *decrypted_data;	/* decrypted data */
 	u8 payload_data[0];	/* payload data + datablob + hmac */
@@ -40,4 +40,4 @@ static inline const struct encrypted_key_payload *encrypted_key_payload(const st
 	return (struct encrypted_key_payload *)rcu_dereference_key(key);
 }
 
-#endif /* _KEYS_ENCRYPTED_TYPE_H */
+#endif				/* _KEYS_ENCRYPTED_TYPE_H */
