@@ -179,9 +179,9 @@ config CRYPTO_DEV_FSL_CAAM_KEY
 	default n
 	help
 	  Enables the driver module for CAAM keys which are part of
-	  Freescale's Cryptographic Accelerator
-	  and Assurance Module (CAAM). This module adds CAAM keys/blobs for the use
-	  in the kernel keyring (e.g. ecryptfs encrypted keys).
+	  Freescale's Cryptographic Accelerator and Assurance Module (CAAM).
+	  This module adds CAAM keys/blobs for the use in the kernel
+	  keyring (e.g. ecryptfs encrypted keys).
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called caam_key.
