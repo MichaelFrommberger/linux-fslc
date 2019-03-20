@@ -171,6 +171,31 @@ config CRYPTO_DEV_FSL_CAAM_SM_TEST
 	  stored and recovered secrets can be used for general purpose
 	  encryption/decryption.
 
+config CRYPTO_DEV_FSL_CAAM_KEY
+	tristate "Freescale CAAM key implementation"
+	depends on CRYPTO_DEV_FSL_CAAM
+	depends on CRYPTO_DEV_FSL_CAAM_JR
+	depends on CRYPTO_DEV_FSL_CAAM_SM
+	default n
+	help
+	  Enables the driver module for CAAM keys which are part of
+	  Freescale's Cryptographic Accelerator
+	  and Assurance Module (CAAM). This module adds CAAM keys/blobs for the use
+	  in the kernel keyring (e.g. ecryptfs encrypted keys).
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called caam_key.
+
+config CRYPTO_DEV_FSL_CAAM_KEY_USED_UNIT
+	int "Secure Memory Storage Unit used for CAAM keys"
+	depends on CRYPTO_DEV_FSL_CAAM_KEY
+	range 1 99
+	default 1
+	help
+	  Selects the Secure Memory Storage Unit used for CAAM keys in the kernel
+	  keyring. Unit 0 is not selectable as it is used by the bootloader of the
+	  i.MX6.
+
 config CRYPTO_DEV_FSL_CAAM_SECVIO
 	tristate "CAAM/SNVS Security Violation Handler (EXPERIMENTAL)"
 	depends on CRYPTO_DEV_FSL_CAAM

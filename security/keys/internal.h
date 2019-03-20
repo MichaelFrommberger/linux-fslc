@@ -274,6 +274,7 @@ static inline long keyctl_dh_compute(struct keyctl_dh_params __user *params,
  * Debugging key validation
  */
 #ifdef KEY_DEBUGGING
+#include <linux/err.h>
 extern void __key_check(const struct key *);
 
 static inline void key_check(const struct key *key)

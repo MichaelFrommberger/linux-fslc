@@ -1,0 +1,78 @@
+    CAAM Keys
+
+The CAAM Key is a new key type which can be used as master key to encrypt
+another key (e.g.  Encrypted Keys, ecryptfs Keys). A CAAM Key is a symmetric key
+which is encrypted by the CAAM internal key specific to the device. Therefore it
+can only be decrypted by this device (similar to a TPM key). The usage of the
+key is the same as the TPM key.
+
+Note:
+CAAM Keys cannot be modified once they are created. 
+
+Usage:
+    keyctl add caam name "new keylen [options]" ring
+    keyctl add caam name "load hex_blob [options]" ring
+    keyctl print keyid
+
+    options:
+        color=  RED_KEY|BLACK_KEY type of the key default RED_KEY
+        keymod= ascii hex value of key modifier under which the key will be
+                encrypted by the CAAM default 0x0f0e0d0c0b0a09080706050403020100
+        cover=  AES_ECB|AES_CCM encryption mode default AES_ECB
+
+Examples:
+
+Create a encrypted CAAM master key "masterkey" of length 64 bytes with
+key modifer "0f0e0d0c0b0a0908" and AES ECB encryption mode and save it:
+
+  $ keyctl add caam masterkey "new 64 color=RED_KEY keymod=0f0e0d0c0b0a0908 cover=AES_ECB" @u
+  864847557
+
+  $ keyctl show
+  Session Keyring
+   239184700 --alswrv      0 65534  keyring: _uid_ses.0
+   504575228 --alswrv      0 65534   \_ keyring: _uid.0
+   864847557 --als-rv      0     0       \_ caam: masterkey
+
+  $ keyctl print 864847557
+  1934e83bfce6d3af339a87b80b581c8e3ba086978a703f37530043ada753a46f6b01a600e9
+  bcf2c78c3170a835f202dcb7a78ddc582629bdd2bbd6c9e4018f52aefcc7a80c9a1cf450fb
+  b67ff12e34802968f275f2f859149963261f7915a75fe598286c44b4d9b1bbac6978d1f5c3
+  94
+
+  $ keyctl pipe 864847557 > caam.blob
+
+Load a CAAM master key from the saved blob:
+
+  $ keyctl add caam masterkey "load `cat caam.blob` color=RED_KEY keymod=0f0e0d0c0b0a0908 cover=AES_ECB" @u
+  25107037
+
+  $ keyctl print 25107037
+  1934e83bfce6d3af339a87b80b581c8e3ba086978a703f37530043ada753a46f6b01a600e9
+  bcf2c78c3170a835f202dcb7a78ddc582629bdd2bbd6c9e4018f52aefcc7a80c9a1cf450fb
+  b67ff12e34802968f275f2f859149963261f7915a75fe598286c44b4d9b1bbac6978d1f5c3
+  94
+
+Use the a CAAM master key to encrypt a user key "test" and save it:
+
+  $ keyctl add encrypted test "new caam:masterkey 32" @u
+  72517406
+  
+  $ keyctl print 72517406
+  default caam:masterkey 32 16ee0815abdaef8f97abcba4f400f0ed00c9ce0d254f4dd9
+  132ac511c825235f9ab7393ab37e85c255691a09cb8ffc55b810d57dcffdd2f010c97115cf
+  80bce699f0269a888d78e01f8f5d7d06866b8e99
+  
+  $ keyctl pipe 72517406 > test.blob
+
+Load an encrypted key "test" from saved blob:
+
+  $ keyctl add encrypted test "load `cat test.blob`" @u
+  37706717
+
+  $ keyctl print 37706717
+  default caam:masterkey 32 16ee0815abdaef8f97abcba4f400f0ed00c9ce0d254f4dd9
+  132ac511c825235f9ab7393ab37e85c255691a09cb8ffc55b810d57dcffdd2f010c97115cf
+  80bce699f0269a888d78e01f8f5d7d06866b8e99
+  
+

@@ -71,6 +71,20 @@ config TRUSTED_KEYS
 
 	  If you are unsure as to whether this is required, answer N.
 
+config CAAM_KEYS
+	tristate "CAAM KEYS"
+	depends on KEYS && CRYPTO_DEV_FSL_CAAM_KEY
+	select CRYPTO_HMAC
+	select CRYPTO_SHA1
+	help
+	  This option provides support for creating, encrypting and decrypting
+	  keys in the kernel by using CAAM. CAAM keys are random number symmetric keys,
+	  generated and encrypted by the CAAM module. The CAAM only decrypts the keys,
+	  if the device is booted in the same state as on creation. Userspace will only ever
+	  see encrypted blobs.
+
+	  If you are unsure as to whether this is required, answer N.
+
 config ENCRYPTED_KEYS
 	tristate "ENCRYPTED KEYS"
 	depends on KEYS
