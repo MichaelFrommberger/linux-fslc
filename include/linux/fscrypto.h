@@ -66,6 +66,7 @@ struct fscrypt_context {
 
 #define FS_KEY_DESC_PREFIX		"fscrypt:"
 #define FS_KEY_DESC_PREFIX_SIZE		8
+#define FS_KEY_DESC_STR_LEN (FS_KEY_DESC_PREFIX_SIZE + (2 * FS_KEY_DESCRIPTOR_SIZE))
 
 /* This is passed in from userspace into the kernel keyring */
 struct fscrypt_key {

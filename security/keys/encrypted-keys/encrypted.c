@@ -36,6 +36,7 @@
 
 #include "encrypted.h"
 #include "ecryptfs_format.h"
+#include "fscrypt_format.h"
 
 static const char KEY_TRUSTED_PREFIX[] = "trusted:";
 static const char KEY_USER_PREFIX[] = "user:";
@@ -44,6 +45,7 @@ static const char hmac_alg[] = "hmac(sha256)";
 static const char blkcipher_alg[] = "cbc(aes)";
 static const char key_format_default[] = "default";
 static const char key_format_ecryptfs[] = "ecryptfs";
+static const char key_format_fscrypt[] = "fscrypt";
 static unsigned int ivsize;
 static int blksize;
 
@@ -67,12 +69,13 @@ enum {
 };
 
 enum {
-	Opt_error = -1, Opt_default, Opt_ecryptfs
+	Opt_error = -1, Opt_default, Opt_ecryptfs, Opt_fscrypt
 };
 
 static const match_table_t key_format_tokens = {
 	{Opt_default, "default"},
 	{Opt_ecryptfs, "ecryptfs"},
+	{Opt_fscrypt, "fscrypt"},
 	{Opt_error, NULL}
 };
 
@@ -119,6 +122,40 @@ static int valid_ecryptfs_desc(const char *ecryptfs_desc)
 	for (i = 0; i < KEY_ECRYPTFS_DESC_LEN; i++) {
 		if (!isxdigit(ecryptfs_desc[i])) {
 			pr_err("encrypted_key: key description must contain "
+			       "only hexadecimal characters\n");
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * valid_fscrypt_desc - verify the description of a new/loaded encrypted key
+ *
+ * The description of a encrypted key with format 'fscrypt' must contain
+ * exactly 16 hexadecimal characters plus a prefix.
+ *
+ */
+static int valid_fscrypt_desc(const char *fscrypt_desc)
+{
+	int i;
+
+	if (strlen(fscrypt_desc) != FS_KEY_DESC_STR_LEN) {
+		pr_err("encrypted_key: key description must be %d "
+		       "characters long\n", FS_KEY_DESC_STR_LEN);
+		return -EINVAL;
+	}
+
+  if (strncmp(FS_KEY_DESC_PREFIX, fscrypt_desc, FS_KEY_DESC_PREFIX_SIZE)) {
+		pr_err("encrypted_key: key description must be prefixed with \"%s\"\n",
+		       FS_KEY_DESC_PREFIX);
+		return -EINVAL;
+  }
+
+	for (i = 0; i < (FS_KEY_DESC_STR_LEN - FS_KEY_DESC_PREFIX_SIZE); i++) {
+		if (!isxdigit(fscrypt_desc[i + FS_KEY_DESC_PREFIX_SIZE])) {
+			pr_err("encrypted_key: after prefix key description must contain "
 			       "only hexadecimal characters\n");
 			return -EINVAL;
 		}
@@ -190,7 +227,7 @@ static int datablob_parse(char *datablob, const char **format,
 	}
 	key_cmd = match_token(keyword, key_tokens, args);
 
-	/* Get optional format: default | ecryptfs */
+	/* Get optional format: default | ecryptfs | fscrypt */
 	p = strsep(&datablob, " \t");
 	if (!p) {
 		pr_err("encrypted_key: insufficient parameters specified\n");
@@ -200,6 +237,7 @@ static int datablob_parse(char *datablob, const char **format,
 	key_format = match_token(p, key_format_tokens, args);
 	switch (key_format) {
 	case Opt_ecryptfs:
+	case Opt_fscrypt:
 	case Opt_default:
 		*format = p;
 		*master_desc = strsep(&datablob, " \t");
@@ -644,16 +682,27 @@ static struct encrypted_key_payload *encrypted_key_alloc(struct key *key,
 	format_len = (!format) ? strlen(key_format_default) : strlen(format);
 	decrypted_datalen = dlen;
 	payload_datalen = decrypted_datalen;
-	if (format && !strcmp(format, key_format_ecryptfs)) {
-		if (dlen != ECRYPTFS_MAX_KEY_BYTES) {
-			pr_err("encrypted_key: keylen for the ecryptfs format "
-			       "must be equal to %d bytes\n",
-			       ECRYPTFS_MAX_KEY_BYTES);
-			return ERR_PTR(-EINVAL);
-		}
-		decrypted_datalen = ECRYPTFS_MAX_KEY_BYTES;
-		payload_datalen = sizeof(struct ecryptfs_auth_tok);
-	}
+	if (format) {
+    if (!strcmp(format, key_format_ecryptfs)) {
+      if (dlen != ECRYPTFS_MAX_KEY_BYTES) {
+        pr_err("encrypted_key: keylen for the ecryptfs format "
+            "must be equal to %d bytes\n",
+            ECRYPTFS_MAX_KEY_BYTES);
+        return ERR_PTR(-EINVAL);
+      }
+      decrypted_datalen = ECRYPTFS_MAX_KEY_BYTES;
+      payload_datalen = sizeof(struct ecryptfs_auth_tok);
+    } else if (!strcmp(format, key_format_fscrypt)) {
+      if (dlen != FS_MAX_KEY_SIZE) {
+        pr_err("encrypted_key: keylen for the fscrypt format "
+            "must be equal to %d bytes\n",
+            FS_MAX_KEY_SIZE);
+        return ERR_PTR(-EINVAL);
+      }
+      decrypted_datalen = FS_MAX_KEY_SIZE;
+      payload_datalen = sizeof(struct fscrypt_key);
+    }
+  }
 
 	encrypted_datalen = roundup(decrypted_datalen, blksize);
 
@@ -749,9 +798,13 @@ static void __ekey_init(struct encrypted_key_payload *epayload,
 	if (!format)
 		memcpy(epayload->format, key_format_default, format_len);
 	else {
-		if (!strcmp(format, key_format_ecryptfs))
+		if (!strcmp(format, key_format_ecryptfs)) {
 			epayload->decrypted_data =
 				ecryptfs_get_auth_tok_key((struct ecryptfs_auth_tok *)epayload->payload_data);
+    } else if (!strcmp(format, key_format_fscrypt)) {
+			epayload->decrypted_data =
+				fscrypt_get_enc_key((struct fscrypt_key *)epayload->payload_data);
+    }
 
 		memcpy(epayload->format, format, format_len);
 	}
@@ -773,14 +826,22 @@ static int encrypted_init(struct encrypted_key_payload *epayload,
 {
 	int ret = 0;
 
-	if (format && !strcmp(format, key_format_ecryptfs)) {
-		ret = valid_ecryptfs_desc(key_desc);
-		if (ret < 0)
-			return ret;
+	if (format) {
+    if (!strcmp(format, key_format_ecryptfs)) {
+      ret = valid_ecryptfs_desc(key_desc);
+      if (ret < 0)
+        return ret;
 
-		ecryptfs_fill_auth_tok((struct ecryptfs_auth_tok *)epayload->payload_data,
-				       key_desc);
-	}
+      ecryptfs_fill_auth_tok((struct ecryptfs_auth_tok *)epayload->payload_data,
+          key_desc);
+    } else if (!strcmp(format, key_format_fscrypt)) {
+      ret = valid_fscrypt_desc(key_desc);
+      if (ret < 0)
+        return ret;
+
+      fscrypt_fill_enc_key((struct fscrypt_key *)epayload->payload_data);
+    }
+  }
 
 	__ekey_init(epayload, format, master_desc, datalen);
 	if (!hex_encoded_iv) {

@@ -1,0 +1,43 @@
+    Encrypted keys for the fscrypt layer
+
+The fscrypt has the ability to encrpyt the content of several filesystems. 
+Therefore a symmetric key is necessary. There are two types of keys which 
+can be used for this purpose:
+- logon keys with fscrypt as prefix
+- encrypted keys from the type fscrypt
+
+In the following only the encrypted key type is described:
+
+Usage:
+   keyctl add encrypted name "new fscrypt key-type:master-key-name keylen" ring
+   keyctl add encrypted name "load hex_blob" ring
+   keyctl update keyid "update key-type:master-key-name"
+
+name:= 'fscrypt:<16 hexadecimal characters>'
+key-type:= 'trusted' | 'user' | 'caam' 
+keylen:= 64
+
+Example of encrypted key usage with the ext4 filesystem which is using the 
+fscrypt layer:
+
+It is assumed that the ext4 filesystem is prepared to be encrypted.
+
+Create an encrypted key "fscrypt:0102030405060708" of length 64 bytes with format
+'fscrypt' and save it using a previously loaded caam key "masterkey":
+
+  $ keyctl add encrypted fscrypt:0102030405060708 "new fscrypt caam:masterkey 64" @u
+  101826206
+    
+  $ keyctl print 101826206
+  fscrypt caam:masterkey 64 fd13b42f96f22f130fb19ebf9e13df8d00749a69055b855e7aa
+  43dfeac7ea422ee23d4abef1fcdc0fa191a1aa6e13e5e76148a570d9cb69b307150bb14c36
+  c2dd1829d207ae22a4cdd5bcb91eecbcde3d64c9b60a7e68b8cc8dc042e398dd33a16e94ea
+  dc32041c63dd79b9a7fc446c12ca
+
+  $ keyctl pipe 101826206 > ext4.blob 
+
+Use the created encrypted key to encrypt the '/data/secret' directory which is
+located on the ext4 filesystem:
+
+  $ e4crypt set_policy 0102030405060708 /data/secret
+  Key with descriptor [0102030405060708] applied to /data/secret.

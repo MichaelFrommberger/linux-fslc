@@ -35,4 +35,9 @@ struct encrypted_key_payload {
 
 extern struct key_type key_type_encrypted;
 
+static inline const struct encrypted_key_payload *encrypted_key_payload(const struct key *key)
+{
+	return (struct encrypted_key_payload *)rcu_dereference_key(key);
+}
+
 #endif /* _KEYS_ENCRYPTED_TYPE_H */

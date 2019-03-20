@@ -9,6 +9,7 @@
  */
 
 #include <keys/user-type.h>
+#include <keys/encrypted-type.h>
 #include <linux/scatterlist.h>
 #include <linux/fscrypto.h>
 
@@ -83,6 +84,7 @@ static int validate_user_key(struct fscrypt_info *crypt_info,
 	struct key *keyring_key;
 	struct fscrypt_key *master_key;
 	const struct user_key_payload *ukp;
+	const struct encrypted_key_payload *ekp;
 	int full_key_len = prefix_size + (FS_KEY_DESCRIPTOR_SIZE * 2) + 1;
 	int res;
 
@@ -96,28 +98,54 @@ static int validate_user_key(struct fscrypt_info *crypt_info,
 			ctx->master_key_descriptor);
 	full_key_descriptor[full_key_len - 1] = '\0';
 	keyring_key = request_key(&key_type_logon, full_key_descriptor, NULL);
-	kfree(full_key_descriptor);
-	if (IS_ERR(keyring_key))
-		return PTR_ERR(keyring_key);
-	down_read(&keyring_key->sem);
+  if (IS_ERR(keyring_key)) {
+    keyring_key = request_key(&key_type_encrypted, full_key_descriptor, NULL);
+    kfree(full_key_descriptor);
+    if (IS_ERR(keyring_key)) {
+      return  PTR_ERR(keyring_key);
+    }
+    down_read(&keyring_key->sem);
+    
+    if (keyring_key->type != &key_type_encrypted) {
+      printk_once(KERN_WARNING
+          "%s: key type must be encrypted\n", __func__);
+      res = -ENOKEY;
+      goto out;
+    }
+    ekp = encrypted_key_payload(keyring_key);
+    if (!ekp) {
+      /* key was revoked before we acquired its semaphore */
+      res = -EKEYREVOKED;
+      goto out;
+    }
+    if (ekp->payload_datalen != sizeof(struct fscrypt_key)) {
+      res = -EINVAL;
+      goto out;
+    }
+    master_key = (struct fscrypt_key *)ekp->payload_data;
+  } else {
+    kfree(full_key_descriptor);
+    down_read(&keyring_key->sem);
+    
+    if (keyring_key->type != &key_type_logon) {
+      printk_once(KERN_WARNING
+          "%s: key type must be logon\n", __func__);
+      res = -ENOKEY;
+      goto out;
+    }
+    ukp = user_key_payload(keyring_key);
+    if (!ukp) {
+      /* key was revoked before we acquired its semaphore */
+      res = -EKEYREVOKED;
+      goto out;
+    }
+    if (ukp->datalen != sizeof(struct fscrypt_key)) {
+      res = -EINVAL;
+      goto out;
+    }
+    master_key = (struct fscrypt_key *)ukp->data;
+  }
 
-	if (keyring_key->type != &key_type_logon) {
-		printk_once(KERN_WARNING
-				"%s: key type must be logon\n", __func__);
-		res = -ENOKEY;
-		goto out;
-	}
-	ukp = user_key_payload(keyring_key);
-	if (!ukp) {
-		/* key was revoked before we acquired its semaphore */
-		res = -EKEYREVOKED;
-		goto out;
-	}
-	if (ukp->datalen != sizeof(struct fscrypt_key)) {
-		res = -EINVAL;
-		goto out;
-	}
-	master_key = (struct fscrypt_key *)ukp->data;
 	BUILD_BUG_ON(FS_AES_128_ECB_KEY_SIZE != FS_KEY_DERIVATION_NONCE_SIZE);
 
 	if (master_key->size != FS_AES_256_XTS_KEY_SIZE) {
