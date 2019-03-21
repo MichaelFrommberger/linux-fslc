@@ -856,12 +856,11 @@ out:
 
 static void test_skcipher_speed(const char *algo, int enc, unsigned int secs,
 				struct cipher_speed_template *template,
-				unsigned int tcount, u8 *keysize, bool async)
+			unsigned int tcount, u8 *keysize, bool async, char *iv)
 {
 	unsigned int ret, i, j, k, iv_len;
 	struct tcrypt_result tresult;
 	const char *key;
-	char iv[128];
 	struct skcipher_request *req;
 	struct crypto_skcipher *tfm;
 	const char *e;
@@ -953,8 +952,8 @@ static void test_skcipher_speed(const char *algo, int enc, unsigned int secs,
 			}
 
 			iv_len = crypto_skcipher_ivsize(tfm);
-			if (iv_len)
-				memset(&iv, 0xff, iv_len);
+			if (iv && iv_len)
+				memset(iv, 0xff, iv_len);
 
 			skcipher_request_set_crypt(req, sg, sg, *b_size, iv);
 
@@ -986,16 +985,18 @@ static void test_acipher_speed(const char *algo, int enc, unsigned int secs,
 			       struct cipher_speed_template *template,
 			       unsigned int tcount, u8 *keysize)
 {
+	char iv[128];
 	return test_skcipher_speed(algo, enc, secs, template, tcount, keysize,
-				   true);
+				   true, iv);
 }
 
 static void test_cipher_speed(const char *algo, int enc, unsigned int secs,
 			      struct cipher_speed_template *template,
 			      unsigned int tcount, u8 *keysize)
 {
+	char iv[128];
 	return test_skcipher_speed(algo, enc, secs, template, tcount, keysize,
-				   false);
+				   false, iv);
 }
 
 static void test_available(void)
@@ -2037,6 +2038,13 @@ static int do_test(const char *alg, u32 type, u32 mask, int m)
 				   speed_template_8_32);
 		test_acipher_speed("ctr(blowfish)", DECRYPT, sec, NULL, 0,
 				   speed_template_8_32);
+		break;
+
+	case 900:
+		test_skcipher_speed("ecb(aes)", ENCRYPT, sec, NULL, 0,
+				   speed_template_16_24_32, true, NULL);
+		test_skcipher_speed("ecb(aes)", DECRYPT, sec, NULL, 0,
+				   speed_template_16_24_32, true, NULL);
 		break;
 
 	case 1000:
