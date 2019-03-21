@@ -2122,7 +2122,7 @@ static void ablkcipher_decrypt_done(struct device *jrdev, u32 *desc, u32 err,
 	 */
   if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) != OP_ALG_AAI_ECB) {
     scatterwalk_map_and_copy(req->info, req->src, req->nbytes - ivsize,
-        icopy, 0);
+        ivcopy, 0);
   }
 
 	kfree(edesc);
