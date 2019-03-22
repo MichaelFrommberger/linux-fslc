@@ -856,7 +856,7 @@ out:
 
 static void test_skcipher_speed(const char *algo, int enc, unsigned int secs,
 				struct cipher_speed_template *template,
-			unsigned int tcount, u8 *keysize, bool async, char *iv)
+				unsigned int tcount, u8 *keysize, bool async, char *iv)
 {
 	unsigned int ret, i, j, k, iv_len;
 	struct tcrypt_result tresult;

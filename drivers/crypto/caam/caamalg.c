@@ -2076,9 +2076,9 @@ static void ablkcipher_encrypt_done(struct device *jrdev, u32 *desc, u32 err,
 	 * ciphertext block. This is used e.g. by the CTS mode.
 	 */
 	if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) != OP_ALG_AAI_ECB) {
-    scatterwalk_map_and_copy(req->info, req->dst, req->nbytes - ivsize,
-        ivcopy, 0);
-  }
+		scatterwalk_map_and_copy(req->info, req->dst, req->nbytes - ivsize,
+				ivcopy, 0);
+	}
 
 	kfree(edesc);
 
@@ -2120,10 +2120,10 @@ static void ablkcipher_decrypt_done(struct device *jrdev, u32 *desc, u32 err,
 	 * The crypto API expects us to set the IV (req->info) to the last
 	 * ciphertext block.
 	 */
-  if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) != OP_ALG_AAI_ECB) {
-    scatterwalk_map_and_copy(req->info, req->src, req->nbytes - ivsize,
-        ivcopy, 0);
-  }
+	if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) != OP_ALG_AAI_ECB) {
+		scatterwalk_map_and_copy(req->info, req->src, req->nbytes - ivsize,
+				ivcopy, 0);
+	}
 
 	kfree(edesc);
 
